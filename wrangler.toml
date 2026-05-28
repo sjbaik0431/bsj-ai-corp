@@ -1,0 +1,10 @@
+name = "bsj-ai-corp"
+compatibility_date = "2026-05-28"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+# KV 바인딩 (진행 중 작업 상태)
+# 배포 시 wrangler kv:namespace create TASKS 로 만든 ID 입력
+# [[kv_namespaces]]
+# binding = "TASKS"
+# id = "TODO_KV_ID_HERE"
