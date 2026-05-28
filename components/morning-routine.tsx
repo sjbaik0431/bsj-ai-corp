@@ -20,7 +20,7 @@ export function MorningRoutine() {
           <div className="flex-1">
             <p className="text-xs uppercase tracking-wider text-slate-500">오늘의 음악</p>
             <p className="mt-1 text-lg font-semibold text-bsj-ink">오월의 아침 · Jazz</p>
-            <p className="mt-0.5 text-sm text-slate-500">맑은 목요일에 어울리는 라운지 재즈</p>
+            <p className="mt-0.5 text-sm text-slate-500">목요일 오전에 어울리는 라운지 재즈</p>
           </div>
           <Play className={`h-5 w-5 text-bsj-primary ${musicPlaying ? 'animate-pulse-soft' : ''}`} />
         </div>

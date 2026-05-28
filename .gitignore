@@ -36,3 +36,7 @@ next-env.d.ts
 
 # claude code local launch config
 .claude/
+
+# safety: never commit credential files
+*.git-credentials
+**/.git-credentials
