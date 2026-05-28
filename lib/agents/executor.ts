@@ -19,69 +19,84 @@ const EXECUTION_SUFFIX = `
 응답은 마크다운 본문만 출력하세요. 다른 메타 설명·코드 펜스 불필요.
 `
 
+const RETRY_SUFFIX = `
+---
+[재작성 모드 — 감사 의견 반영]
+이전 산출물이 감사팀장으로부터 **FAIL** 판정을 받았습니다. 아래 감사 의견을 한 줄도 빠짐없이 반영해서 산출물을 처음부터 다시 작성하세요. 빨간 깃발로 지적된 항목은 삭제하거나 "[확인 필요]"로 안전하게 표기.
+
+응답은 새 마크다운 본문만. 사과·해명 텍스트 불필요.
+`
+
 export async function executeTask(task: Task): Promise<void> {
   try {
-    // 1단계: 팀장 실행
-    await update(task.id, { status: 'running', progress: 40 })
-
-    const teamPrompt = await loadPrompt(task.owner)
-    const system = `${teamPrompt}\n${EXECUTION_SUFFIX}`
-    const userMessage = buildExecutionInput(task)
-
-    const res = await anthropic().messages.create({
-      model: AGENT_TO_MODEL[task.owner],
-      max_tokens: 4096,
-      system,
-      messages: [{ role: 'user', content: userMessage }],
-    })
-
-    const report = res.content
-      .filter((b) => b.type === 'text')
-      .map((b) => (b as { type: 'text'; text: string }).text)
-      .join('')
-      .trim()
-
-    const updated = await update(task.id, {
-      status: task.needsAudit ? 'review' : 'done',
-      progress: task.needsAudit ? 70 : 100,
-      reportMarkdown: report,
-    })
-
-    // 2단계: 감사팀장 검증 (필요 시)
-    if (task.needsAudit && updated) {
-      const audit = await verifyTask(updated)
-      await update(task.id, {
-        status: 'done',
-        progress: 100,
-        auditReport: audit.reportMarkdown,
-        auditVerdict: audit.verdict,
-      })
-    }
-
-    // 3단계: 자료실 게시 (도메인 폴더에 정적 마크다운 저장)
-    const finalAll = await list()
-    const final = finalAll.find((t) => t.id === task.id)
-    if (final && final.status === 'done') {
-      try {
-        const libraryPath = await publishTaskToLibrary(final)
-        if (libraryPath) await update(task.id, { libraryPath })
-      } catch (e: unknown) {
-        console.error(`[publish:${task.id}]`, e instanceof Error ? e.message : String(e))
-      }
-    }
+    await runOnce(task)
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     console.error(`[executor:${task.id}:${task.owner}]`, msg)
-    await update(task.id, {
-      status: 'failed',
-      progress: 100,
-      errorMessage: msg,
-    })
+    await update(task.id, { status: 'failed', progress: 100, errorMessage: msg })
   }
 }
 
-function buildExecutionInput(task: Task): string {
-  return `## 본부장 위임 메모
+async function runOnce(task: Task, retryCount = 0): Promise<void> {
+  await update(task.id, { status: 'running', progress: 40, retryCount })
+
+  const teamPrompt = await loadPrompt(task.owner)
+  const system = `${teamPrompt}\n${retryCount > 0 ? RETRY_SUFFIX : EXECUTION_SUFFIX}`
+  const userMessage = buildExecutionInput(task, retryCount)
+
+  const res = await anthropic().messages.create({
+    model: AGENT_TO_MODEL[task.owner],
+    max_tokens: 4096,
+    system,
+    messages: [{ role: 'user', content: userMessage }],
+  })
+
+  const report = res.content
+    .filter((b) => b.type === 'text')
+    .map((b) => (b as { type: 'text'; text: string }).text)
+    .join('')
+    .trim()
+
+  const updated = await update(task.id, {
+    status: task.needsAudit ? 'review' : 'done',
+    progress: task.needsAudit ? 70 : 100,
+    reportMarkdown: report,
+  })
+
+  if (task.needsAudit && updated) {
+    const audit = await verifyTask(updated)
+    await update(task.id, {
+      auditReport: audit.reportMarkdown,
+      auditVerdict: audit.verdict,
+    })
+
+    // FAIL이면서 첫 시도면 재작성 1회
+    if (audit.verdict === 'fail' && retryCount === 0) {
+      const refreshed = (await list()).find((t) => t.id === task.id)
+      if (refreshed) {
+        await runOnce(refreshed, 1)
+        return
+      }
+    }
+
+    await update(task.id, { status: 'done', progress: 100 })
+  }
+
+  // 자료실 게시
+  const finalAll = await list()
+  const final = finalAll.find((t) => t.id === task.id)
+  if (final && final.status === 'done') {
+    try {
+      const libraryPath = await publishTaskToLibrary(final)
+      if (libraryPath) await update(task.id, { libraryPath })
+    } catch (e: unknown) {
+      console.error(`[publish:${task.id}]`, e instanceof Error ? e.message : String(e))
+    }
+  }
+}
+
+function buildExecutionInput(task: Task, retryCount: number): string {
+  const baseInput = `## 본부장 위임 메모
 
 **작업 제목**: ${task.title}
 **배정 사유**: ${task.decisionSummary}
@@ -90,7 +105,28 @@ function buildExecutionInput(task: Task): string {
 
 ## 사용자 원문 입력
 
-${task.userInput}
+${task.userInput}`
+
+  if (retryCount > 0 && task.auditReport && task.reportMarkdown) {
+    return `${baseInput}
+
+---
+
+## 이전 산출물 (감사 FAIL)
+
+${task.reportMarkdown}
+
+---
+
+## 감사팀장 의견 (반드시 반영)
+
+${task.auditReport}
+
+---
+위 감사 의견 전수 반영해서 산출물을 처음부터 다시 작성하세요.`
+  }
+
+  return `${baseInput}
 
 ---
 위 내용을 바탕으로 당신의 직무 영역에서 즉시 활용 가능한 산출물을 작성하세요.`

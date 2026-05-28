@@ -22,6 +22,7 @@ export type Task = {
   auditVerdict?: 'pass' | 'flag' | 'fail'
   domain?: Domain
   libraryPath?: string
+  retryCount?: number
 }
 
 export type Domain = 'hadminsa' | 'hotel' | 'industrial' | 'mice' | 'life'

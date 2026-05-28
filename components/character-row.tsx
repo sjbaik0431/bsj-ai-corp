@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Mic } from 'lucide-react'
+import { VoiceChatModal } from './voice-chat-modal'
 
 type AgentId = 'bonbujang' | 'gihoek' | 'saeop' | 'gamsa' | 'minwon'
 type TaskStatus = 'analyzing' | 'running' | 'review' | 'done' | 'failed'
@@ -80,6 +81,7 @@ function deriveAgentState(id: AgentId, tasks: Task[]): { state: AgentState; curr
 
 export function CharacterRow() {
   const [tasks, setTasks] = useState<Task[]>([])
+  const [chatWith, setChatWith] = useState<AgentMeta | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -118,6 +120,7 @@ export function CharacterRow() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
               whileHover={{ y: -3 }}
+              onClick={() => setChatWith(a)}
               className="glass rounded-3xl p-4 text-left shadow-sm hover:shadow-lg transition-all group"
             >
               <div className="flex items-center gap-3">
@@ -149,6 +152,14 @@ export function CharacterRow() {
           )
         })}
       </div>
+      <VoiceChatModal
+        open={!!chatWith}
+        onClose={() => setChatWith(null)}
+        agentId={chatWith?.id ?? ''}
+        agentName={chatWith?.name ?? ''}
+        emoji={chatWith?.emoji ?? ''}
+        color={chatWith?.color ?? ''}
+      />
     </div>
   )
 }

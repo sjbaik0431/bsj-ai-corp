@@ -31,3 +31,28 @@ html, body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255,255,255,0.6);
 }
+
+/* Markdown 렌더 스타일 (커스텀 prose) */
+.prose-bsj { color: #1e293b; font-size: 14px; line-height: 1.7; }
+.prose-bsj h1 { font-size: 1.5rem; font-weight: 700; margin: 1.2em 0 0.6em; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.3em; }
+.prose-bsj h2 { font-size: 1.25rem; font-weight: 700; margin: 1.1em 0 0.5em; color: #0f172a; }
+.prose-bsj h3 { font-size: 1.05rem; font-weight: 600; margin: 1em 0 0.4em; color: #1e293b; }
+.prose-bsj h4 { font-size: 1rem; font-weight: 600; margin: 0.9em 0 0.3em; color: #334155; }
+.prose-bsj p { margin: 0.6em 0; }
+.prose-bsj ul, .prose-bsj ol { margin: 0.6em 0; padding-left: 1.5em; }
+.prose-bsj li { margin: 0.2em 0; }
+.prose-bsj li > p { margin: 0; }
+.prose-bsj blockquote { border-left: 3px solid #cbd5e1; padding: 0.4em 0.9em; color: #475569; background: rgba(248,250,252,0.6); margin: 0.7em 0; border-radius: 0 0.4rem 0.4rem 0; font-style: normal; }
+.prose-bsj code { background: #f1f5f9; padding: 0.1em 0.35em; border-radius: 0.25rem; font-size: 0.9em; font-family: 'Pretendard JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+.prose-bsj pre { background: #1e293b; color: #f1f5f9; padding: 1em; border-radius: 0.6rem; overflow-x: auto; font-size: 0.85em; margin: 0.8em 0; }
+.prose-bsj pre code { background: transparent; color: inherit; padding: 0; }
+.prose-bsj table { border-collapse: collapse; margin: 0.8em 0; font-size: 0.9em; width: 100%; }
+.prose-bsj th { background: #f8fafc; padding: 0.4em 0.7em; text-align: left; font-weight: 600; border: 1px solid #e2e8f0; }
+.prose-bsj td { padding: 0.4em 0.7em; border: 1px solid #e2e8f0; }
+.prose-bsj tr:nth-child(2n) td { background: rgba(248,250,252,0.5); }
+.prose-bsj a { color: #2563eb; text-decoration: underline; }
+.prose-bsj hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.2em 0; }
+.prose-bsj strong { font-weight: 700; color: #0f172a; }
+.prose-bsj input[type="checkbox"] { margin-right: 0.4em; transform: translateY(1px); }
+.prose-bsj > *:first-child { margin-top: 0; }
+.prose-bsj > *:last-child { margin-bottom: 0; }

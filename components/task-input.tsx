@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Send, Paperclip, Mic, Sparkles, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Send, Paperclip, Mic, Sparkles, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react'
 
 type Reply = { ok: true; ownerLabel: string; title: string; reply: string } | { ok: false; error: string }
 
@@ -10,7 +10,10 @@ export function TaskInput() {
   const [files, setFiles] = useState<File[]>([])
   const [pending, setPending] = useState(false)
   const [reply, setReply] = useState<Reply | null>(null)
+  const [recording, setRecording] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
 
   const samples = [
     '조아호텔 5월 매출 정리해서 IR 자료 만들어줘',
@@ -19,34 +22,83 @@ export function TaskInput() {
   ]
 
   async function submit() {
-    if (!text.trim() || pending) return
+    if ((!text.trim() && files.length === 0) || pending) return
     setPending(true)
     setReply(null)
+
     try {
+      let combined = text.trim()
+
+      if (files.length > 0) {
+        const fd = new FormData()
+        files.forEach((f) => fd.append('files', f))
+        const ur = await fetch('/api/upload', { method: 'POST', body: fd })
+        const ud = await ur.json()
+        if (ur.ok && ud.ok) {
+          const sections = ud.files.map((f: { name: string; text: string }) => `\n\n## 첨부: ${f.name}\n\n${f.text}`).join('')
+          combined = combined ? combined + sections : `(첨부만 분석)${sections}`
+        } else {
+          setReply({ ok: false, error: ud.error ?? '파일 처리 실패' })
+          setPending(false)
+          return
+        }
+      }
+
       const res = await fetch('/api/task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text: combined }),
       })
       const data = await res.json()
       if (!res.ok || !data.ok) {
         setReply({ ok: false, error: data.error ?? '서버 오류' })
       } else {
-        setReply({
-          ok: true,
-          ownerLabel: data.task.ownerLabel,
-          title: data.task.title,
-          reply: data.initialReply,
-        })
+        setReply({ ok: true, ownerLabel: data.task.ownerLabel, title: data.task.title, reply: data.initialReply })
         setText('')
         setFiles([])
-        // notify live-tasks to refresh immediately
         window.dispatchEvent(new CustomEvent('bsj:task-created'))
       }
     } catch (e) {
       setReply({ ok: false, error: e instanceof Error ? e.message : String(e) })
     } finally {
       setPending(false)
+    }
+  }
+
+  async function toggleRecording() {
+    if (recording) {
+      recorderRef.current?.stop()
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      chunksRef.current = []
+      mr.ondataavailable = (e) => chunksRef.current.push(e.data)
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop())
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        const fd = new FormData()
+        fd.append('audio', blob, 'speech.webm')
+        setPending(true)
+        try {
+          const r = await fetch('/api/voice/stt', { method: 'POST', body: fd })
+          const d = await r.json()
+          if (r.ok && d.text) setText((prev) => (prev ? prev + ' ' : '') + d.text)
+          else setReply({ ok: false, error: d.error ?? 'STT 실패' })
+        } catch (e) {
+          setReply({ ok: false, error: e instanceof Error ? e.message : String(e) })
+        } finally {
+          setPending(false)
+          setRecording(false)
+        }
+      }
+      recorderRef.current = mr
+      mr.start()
+      setRecording(true)
+    } catch (e) {
+      setReply({ ok: false, error: '마이크 접근 실패: ' + (e instanceof Error ? e.message : String(e)) })
+      setRecording(false)
     }
   }
 
@@ -63,7 +115,7 @@ export function TaskInput() {
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit()
         }}
-        placeholder="과제를 입력하세요. Ctrl+Enter로 전송."
+        placeholder="과제를 입력하세요. 파일 첨부 가능 · Ctrl+Enter로 전송."
         rows={3}
         disabled={pending}
         className="w-full rounded-2xl border border-slate-200 bg-white/80 p-4 text-base outline-none focus:border-bsj-primary focus:ring-2 focus:ring-bsj-primary/20 resize-none disabled:opacity-60"
@@ -72,7 +124,16 @@ export function TaskInput() {
       {files.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
           {files.map((f, i) => (
-            <span key={i} className="text-xs rounded-lg bg-slate-100 px-2 py-1">📎 {f.name}</span>
+            <span key={i} className="text-xs rounded-lg bg-slate-100 px-2 py-1 inline-flex items-center gap-1.5">
+              📎 {f.name}
+              <button
+                onClick={() => setFiles((arr) => arr.filter((_, idx) => idx !== i))}
+                className="text-slate-400 hover:text-rose-500 transition"
+                aria-label="제거"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
           ))}
         </div>
       )}
@@ -83,19 +144,26 @@ export function TaskInput() {
             ref={fileRef}
             type="file"
             multiple
+            accept=".pdf,.docx,.txt,.md,.csv"
             className="hidden"
             onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
           />
-          <button onClick={() => fileRef.current?.click()} className="rounded-xl p-2 hover:bg-slate-100 transition" aria-label="파일 첨부">
+          <button onClick={() => fileRef.current?.click()} disabled={pending} className="rounded-xl p-2 hover:bg-slate-100 transition disabled:opacity-50" aria-label="파일 첨부">
             <Paperclip className="h-5 w-5 text-slate-600" />
           </button>
-          <button className="rounded-xl p-2 hover:bg-slate-100 transition" aria-label="음성 입력">
-            <Mic className="h-5 w-5 text-slate-600" />
+          <button
+            onClick={toggleRecording}
+            disabled={pending && !recording}
+            className={`rounded-xl p-2 transition ${recording ? 'bg-rose-100 text-rose-600' : 'hover:bg-slate-100 text-slate-600'} disabled:opacity-50`}
+            aria-label="음성 입력"
+          >
+            <Mic className={`h-5 w-5 ${recording ? 'animate-pulse' : ''}`} />
           </button>
+          {recording && <span className="text-xs text-rose-600">녹음 중... (다시 누르면 전송)</span>}
         </div>
         <button
           onClick={submit}
-          disabled={pending || !text.trim()}
+          disabled={pending || (!text.trim() && files.length === 0)}
           className="rounded-2xl bg-gradient-to-r from-bsj-primary to-sky-500 px-5 py-2.5 text-white font-medium shadow-md hover:shadow-lg active:scale-95 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

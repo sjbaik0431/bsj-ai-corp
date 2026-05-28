@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, CheckCircle2, Loader2, AlertCircle, ChevronDown, ChevronUp, ShieldCheck, ShieldAlert, ShieldX } from 'lucide-react'
+import { Markdown } from './markdown'
 
 type Task = {
   id: string
@@ -158,16 +159,16 @@ export function LiveTasks() {
                           )}
                           <div>
                             <p className="text-xs font-semibold text-slate-500 mb-2">{t.ownerLabel} 산출물</p>
-                            <pre className="whitespace-pre-wrap break-words rounded-xl bg-white/80 border border-slate-200 p-4 text-[13px] leading-relaxed font-sans text-slate-800">
-{t.reportMarkdown}
-                            </pre>
+                            <div className="rounded-xl bg-white/80 border border-slate-200 p-5">
+                              <Markdown source={t.reportMarkdown ?? ''} />
+                            </div>
                           </div>
                           {t.auditReport && (
                             <div>
-                              <p className="text-xs font-semibold text-slate-500 mb-2">감사팀장 검증</p>
-                              <pre className={`whitespace-pre-wrap break-words rounded-xl border p-4 text-[13px] leading-relaxed font-sans ${t.auditVerdict === 'pass' ? 'bg-emerald-50/60 border-emerald-200 text-slate-800' : t.auditVerdict === 'fail' ? 'bg-rose-50/60 border-rose-200 text-slate-800' : 'bg-amber-50/60 border-amber-200 text-slate-800'}`}>
-{t.auditReport}
-                              </pre>
+                              <p className="text-xs font-semibold text-slate-500 mb-2">마누라 (감사팀장) 검증</p>
+                              <div className={`rounded-xl border p-5 ${t.auditVerdict === 'pass' ? 'bg-emerald-50/60 border-emerald-200' : t.auditVerdict === 'fail' ? 'bg-rose-50/60 border-rose-200' : 'bg-amber-50/60 border-amber-200'}`}>
+                                <Markdown source={t.auditReport} />
+                              </div>
                             </div>
                           )}
                         </div>

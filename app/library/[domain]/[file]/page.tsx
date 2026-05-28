@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { readLibraryFile } from '@/lib/store/library'
 import { DOMAIN_LABEL, type Domain } from '@/lib/store/tasks'
 import { ArrowLeft } from 'lucide-react'
+import { Markdown } from '@/components/markdown'
 
 const VALID_DOMAINS: Domain[] = ['hadminsa', 'hotel', 'industrial', 'mice', 'life']
 
@@ -26,16 +27,11 @@ export default async function LibraryFilePage({ params }: { params: Promise<{ do
 
       <div className="mb-6">
         <p className="text-xs uppercase tracking-wider text-slate-500">#{entry.id} · {entry.ownerLabel} · {DOMAIN_LABEL[d]}</p>
-        <h1 className="text-2xl md:text-3xl font-bold text-bsj-ink mt-1">{entry.title}</h1>
-        <p className="mt-2 text-xs text-slate-400">
-          작성: {new Date(entry.createdAt).toLocaleString('ko-KR')}
-        </p>
+        <p className="mt-2 text-xs text-slate-400">작성: {new Date(entry.createdAt).toLocaleString('ko-KR')}</p>
       </div>
 
-      <article className="glass rounded-3xl p-6 md:p-8 shadow-sm">
-        <pre className="whitespace-pre-wrap break-words font-sans text-[14px] leading-relaxed text-slate-800">
-{body}
-        </pre>
+      <article className="glass rounded-3xl p-6 md:p-10 shadow-sm">
+        <Markdown source={body} />
       </article>
     </main>
   )
