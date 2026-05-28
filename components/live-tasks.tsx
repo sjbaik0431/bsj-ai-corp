@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, CheckCircle2, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Clock, CheckCircle2, Loader2, AlertCircle, ChevronDown, ChevronUp, ShieldCheck, ShieldAlert, ShieldX } from 'lucide-react'
 
 type Task = {
   id: string
@@ -13,14 +13,23 @@ type Task = {
   decisionSummary?: string
   reportMarkdown?: string
   errorMessage?: string
+  needsAudit?: boolean
+  auditReport?: string
+  auditVerdict?: 'pass' | 'flag' | 'fail'
 }
 
 const statusBadge: Record<Task['status'], { label: string; bg: string; ico: React.ReactNode }> = {
   analyzing: { label: '분석 중',   bg: 'bg-sky-100 text-sky-700',         ico: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
   running:   { label: '진행 중',   bg: 'bg-emerald-100 text-emerald-700', ico: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
-  review:    { label: '검수 대기', bg: 'bg-amber-100 text-amber-700',     ico: <Clock className="h-3.5 w-3.5" /> },
+  review:    { label: '감사 중',   bg: 'bg-amber-100 text-amber-700',     ico: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
   done:      { label: '완료',      bg: 'bg-slate-100 text-slate-700',     ico: <CheckCircle2 className="h-3.5 w-3.5" /> },
   failed:    { label: '실패',      bg: 'bg-rose-100 text-rose-700',       ico: <AlertCircle className="h-3.5 w-3.5" /> },
+}
+
+const verdictBadge: Record<NonNullable<Task['auditVerdict']>, { label: string; bg: string; ico: React.ReactNode }> = {
+  pass: { label: '감사 통과', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', ico: <ShieldCheck className="h-3.5 w-3.5" /> },
+  flag: { label: '검토 권고', bg: 'bg-amber-50 text-amber-700 border-amber-200',       ico: <ShieldAlert className="h-3.5 w-3.5" /> },
+  fail: { label: '재작성 필요', bg: 'bg-rose-50 text-rose-700 border-rose-200',         ico: <ShieldX className="h-3.5 w-3.5" /> },
 }
 
 export function LiveTasks() {
@@ -46,7 +55,6 @@ export function LiveTasks() {
 
     fetchTasks()
     const id = setInterval(fetchTasks, 3000)
-
     const onCreated = () => fetchTasks()
     window.addEventListener('bsj:task-created', onCreated)
 
@@ -75,6 +83,7 @@ export function LiveTasks() {
           <AnimatePresence>
             {tasks.map((t, i) => {
               const s = statusBadge[t.status]
+              const v = t.auditVerdict ? verdictBadge[t.auditVerdict] : null
               const isExpanded = expanded === t.id
               const canExpand = (t.status === 'done' && t.reportMarkdown) || t.status === 'failed'
               return (
@@ -97,7 +106,10 @@ export function LiveTasks() {
                       <div className="min-w-0">
                         <p className="text-[11px] text-slate-400">#{t.id}</p>
                         <p className="font-semibold text-bsj-ink truncate">{t.title}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{t.ownerLabel}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {t.ownerLabel}
+                          {t.needsAudit && <span className="ml-1.5 text-[10px] text-amber-600">· 감사 필수</span>}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 ${s.bg}`}>
@@ -106,6 +118,13 @@ export function LiveTasks() {
                         {canExpand && (isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />)}
                       </div>
                     </div>
+                    {v && (
+                      <div className="mt-2">
+                        <span className={`inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 border ${v.bg}`}>
+                          {v.ico}{v.label}
+                        </span>
+                      </div>
+                    )}
                     {t.decisionSummary && !isExpanded && (
                       <p className="mt-2 text-xs text-slate-500 line-clamp-2">{t.decisionSummary}</p>
                     )}
@@ -130,7 +149,7 @@ export function LiveTasks() {
                           <p className="text-xs whitespace-pre-wrap">{t.errorMessage ?? '알 수 없는 오류'}</p>
                         </div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {t.decisionSummary && (
                             <div className="rounded-xl bg-sky-50 p-3 text-xs text-slate-700">
                               <p className="font-semibold text-sky-700 mb-1">본부장 배정 사유</p>
@@ -143,6 +162,14 @@ export function LiveTasks() {
 {t.reportMarkdown}
                             </pre>
                           </div>
+                          {t.auditReport && (
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 mb-2">감사팀장 검증</p>
+                              <pre className={`whitespace-pre-wrap break-words rounded-xl border p-4 text-[13px] leading-relaxed font-sans ${t.auditVerdict === 'pass' ? 'bg-emerald-50/60 border-emerald-200 text-slate-800' : t.auditVerdict === 'fail' ? 'bg-rose-50/60 border-rose-200 text-slate-800' : 'bg-amber-50/60 border-amber-200 text-slate-800'}`}>
+{t.auditReport}
+                              </pre>
+                            </div>
+                          )}
                         </div>
                       )}
                     </motion.div>

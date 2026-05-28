@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       status: 'analyzing',
       progress: 10,
       decisionSummary: decision.decisionSummary,
+      needsAudit: decision.needsAudit,
     })
 
     // 백그라운드 팀장 실행 (응답 차단 안 함)

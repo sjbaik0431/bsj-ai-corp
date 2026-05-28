@@ -17,6 +17,9 @@ export type Task = {
   decisionSummary: string
   reportMarkdown?: string
   errorMessage?: string
+  needsAudit?: boolean
+  auditReport?: string
+  auditVerdict?: 'pass' | 'flag' | 'fail'
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data')

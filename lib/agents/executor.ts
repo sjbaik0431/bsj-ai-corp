@@ -1,6 +1,7 @@
 import { anthropic, AGENT_TO_MODEL, AGENT_LABEL, type AgentId } from '@/lib/anthropic'
 import { loadPrompt } from './prompts'
 import { update, type Task } from '@/lib/store/tasks'
+import { verifyTask } from './verifier'
 
 const EXECUTION_SUFFIX = `
 ---
@@ -18,13 +19,12 @@ const EXECUTION_SUFFIX = `
 `
 
 export async function executeTask(task: Task): Promise<void> {
-  // 진행률: 분석(10) -> 진행(40) -> 완료(100)
   try {
+    // 1단계: 팀장 실행
     await update(task.id, { status: 'running', progress: 40 })
 
     const teamPrompt = await loadPrompt(task.owner)
     const system = `${teamPrompt}\n${EXECUTION_SUFFIX}`
-
     const userMessage = buildExecutionInput(task)
 
     const res = await anthropic().messages.create({
@@ -40,11 +40,22 @@ export async function executeTask(task: Task): Promise<void> {
       .join('')
       .trim()
 
-    await update(task.id, {
-      status: 'done',
-      progress: 100,
+    const updated = await update(task.id, {
+      status: task.needsAudit ? 'review' : 'done',
+      progress: task.needsAudit ? 70 : 100,
       reportMarkdown: report,
     })
+
+    // 2단계: 감사팀장 검증 (필요 시)
+    if (task.needsAudit && updated) {
+      const audit = await verifyTask(updated)
+      await update(task.id, {
+        status: 'done',
+        progress: 100,
+        auditReport: audit.reportMarkdown,
+        auditVerdict: audit.verdict,
+      })
+    }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     console.error(`[executor:${task.id}:${task.owner}]`, msg)
@@ -62,6 +73,7 @@ function buildExecutionInput(task: Task): string {
 **작업 제목**: ${task.title}
 **배정 사유**: ${task.decisionSummary}
 **담당**: ${AGENT_LABEL[task.owner as AgentId]} (당신)
+**감사팀장 검증 예정**: ${task.needsAudit ? '예 — 외부 발송 전 전수 검증됨' : '아니오 (내부용)'}
 
 ## 사용자 원문 입력
 
