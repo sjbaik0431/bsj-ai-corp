@@ -34,7 +34,7 @@ export function CharacterRow() {
   return (
     <div>
       <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-lg font-bold text-bsj-ink">우리 AI 가족</h2>
+        <h2 className="text-lg font-bold text-bsj-ink">직원 소개</h2>
         <p className="text-xs text-slate-500">클릭하면 음성 채팅 시작</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
