@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { routeTask, ownerLabel } from '@/lib/agents/orchestrator'
+import { executeTask } from '@/lib/agents/executor'
 import { create, list } from '@/lib/store/tasks'
 
 export async function POST(req: NextRequest) {
@@ -23,6 +24,11 @@ export async function POST(req: NextRequest) {
       status: 'analyzing',
       progress: 10,
       decisionSummary: decision.decisionSummary,
+    })
+
+    // 백그라운드 팀장 실행 (응답 차단 안 함)
+    queueMicrotask(() => {
+      executeTask(task).catch((e) => console.error('[executeTask]', e))
     })
 
     return Response.json({
