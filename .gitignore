@@ -40,3 +40,7 @@ next-env.d.ts
 # safety: never commit credential files
 *.git-credentials
 **/.git-credentials
+
+# local task state (regenerable, contains task content)
+data/
+logs/
