@@ -26,11 +26,11 @@ type AgentMeta = {
 }
 
 const AGENTS: AgentMeta[] = [
-  { id: 'bonbujang', name: '본부장',   role: 'CEO · 업무지휘',  emoji: '👨‍💼', color: 'from-sky-400 to-bsj-primary',     ring: 'ring-sky-300' },
-  { id: 'gihoek',    name: '기획팀장', role: 'CSO · 조사·설계', emoji: '🧑‍🎓', color: 'from-emerald-400 to-emerald-600', ring: 'ring-emerald-300' },
-  { id: 'saeop',     name: '사업팀장', role: 'COO · 구축·실행', emoji: '👨‍💻', color: 'from-rose-400 to-rose-600',       ring: 'ring-rose-300' },
-  { id: 'gamsa',     name: '감사팀장', role: 'CIA · 팩트체크',  emoji: '👩‍💼', color: 'from-purple-400 to-purple-600',   ring: 'ring-purple-300' },
-  { id: 'minwon',    name: '민원팀장', role: 'CCO · 외부 연결', emoji: '👩‍💻', color: 'from-pink-400 to-pink-600',       ring: 'ring-pink-300' },
+  { id: 'bonbujang', name: '본부장',   role: 'CEO · 업무지휘',  emoji: '👨🏻‍💼', color: 'from-sky-400 to-bsj-primary',     ring: 'ring-sky-300' },
+  { id: 'gihoek',    name: '기획팀장', role: 'CSO · 조사·설계', emoji: '🧑🏻‍🎓', color: 'from-emerald-400 to-emerald-600', ring: 'ring-emerald-300' },
+  { id: 'saeop',     name: '사업팀장', role: 'COO · 구축·실행', emoji: '👨🏻‍💻', color: 'from-rose-400 to-rose-600',       ring: 'ring-rose-300' },
+  { id: 'gamsa',     name: '마누라',   role: 'CIA · 팩트체크',  emoji: '👩🏻‍💼', color: 'from-purple-400 to-purple-600',   ring: 'ring-purple-300' },
+  { id: 'minwon',    name: '민원팀장', role: 'CCO · 외부 연결', emoji: '👩🏻‍💻', color: 'from-pink-400 to-pink-600',       ring: 'ring-pink-300' },
 ]
 
 const STATE_BADGE: Record<AgentState, { label: string; dot: string }> = {

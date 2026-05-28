@@ -30,6 +30,6 @@ export const AGENT_LABEL: Record<AgentId, string> = {
   bonbujang: '본부장',
   gihoek: '기획팀장',
   saeop: '사업팀장',
-  gamsa: '감사팀장',
+  gamsa: '마누라',
   minwon: '민원팀장',
 }
