@@ -20,6 +20,18 @@ export type Task = {
   needsAudit?: boolean
   auditReport?: string
   auditVerdict?: 'pass' | 'flag' | 'fail'
+  domain?: Domain
+  libraryPath?: string
+}
+
+export type Domain = 'hadminsa' | 'hotel' | 'industrial' | 'mice' | 'life'
+
+export const DOMAIN_LABEL: Record<Domain, string> = {
+  hadminsa: '행정사',
+  hotel: '호텔',
+  industrial: '산업단지',
+  mice: 'MICE',
+  life: '라이프',
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data')

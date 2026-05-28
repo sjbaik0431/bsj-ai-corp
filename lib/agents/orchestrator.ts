@@ -1,5 +1,6 @@
 import { anthropic, AGENT_TO_MODEL, AGENT_LABEL, type AgentId } from '@/lib/anthropic'
 import { loadPrompt, loadRouter } from './prompts'
+import type { Domain } from '@/lib/store/tasks'
 
 export type RoutingDecision = {
   owner: AgentId
@@ -8,7 +9,10 @@ export type RoutingDecision = {
   estimatedMinutes: number
   initialReply: string
   needsAudit: boolean
+  domain: Domain
 }
+
+const VALID_DOMAINS: Domain[] = ['hadminsa', 'hotel', 'industrial', 'mice', 'life']
 
 const VALID_OWNERS: AgentId[] = ['bonbujang', 'gihoek', 'saeop', 'gamsa', 'minwon']
 
@@ -23,7 +27,8 @@ const SYSTEM_SUFFIX = `
   "decisionSummary": "<왜 그 팀장에게 맡겼는지 + 무엇을 산출할지 1-2문장>",
   "estimatedMinutes": <정수, 5-180 사이 추정>,
   "initialReply": "<사용자에게 보낼 본부장 답변 2-4문장. 작업 받았다는 확인 + 어떻게 진행할지 + 결과 전달 방식>",
-  "needsAudit": <true|false — 외부 발송(이메일/카톡/공식문서), 공식 보고서, IR/제안서, 수치·법령·일정이 외부에 노출되는 산출물이면 true. 내부 메모/조사 요약/초안만 보기용은 false>
+  "needsAudit": <true|false — 외부 발송(이메일/카톡/공식문서), 공식 보고서, IR/제안서, 수치·법령·일정이 외부에 노출되는 산출물이면 true. 내부 메모/조사 요약/초안만 보기용은 false>,
+  "domain": "<hadminsa|hotel|industrial|mice|life — 작업이 속한 자료실 도메인. 사건/문서/법령/행정사업무=hadminsa, 조아호텔 운영/매각/숙박업=hotel, 진천메가폴리스/산업단지/IR기업유치=industrial, MICE/EZPMP/입찰/박람회=mice, 가족/인맥/건강/일상=life>"
 }
 `
 
@@ -54,6 +59,9 @@ export async function routeTask(userInput: string): Promise<RoutingDecision> {
   const owner = (parsed.owner ?? 'gihoek') as AgentId
   const safeOwner = VALID_OWNERS.includes(owner) && owner !== 'bonbujang' ? owner : 'gihoek'
 
+  const domain = (parsed.domain ?? 'hadminsa') as Domain
+  const safeDomain = VALID_DOMAINS.includes(domain) ? domain : 'hadminsa'
+
   return {
     owner: safeOwner,
     title: String(parsed.title ?? '제목 미정').slice(0, 40),
@@ -61,6 +69,7 @@ export async function routeTask(userInput: string): Promise<RoutingDecision> {
     estimatedMinutes: clampInt(parsed.estimatedMinutes, 5, 180, 30),
     initialReply: String(parsed.initialReply ?? '과제를 접수했습니다. 곧 진행 상황 공유드리겠습니다.'),
     needsAudit: Boolean(parsed.needsAudit),
+    domain: safeDomain,
   }
 }
 

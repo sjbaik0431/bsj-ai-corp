@@ -1,45 +1,116 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Mic } from 'lucide-react'
 
-type Agent = {
+type AgentId = 'bonbujang' | 'gihoek' | 'saeop' | 'gamsa' | 'minwon'
+type TaskStatus = 'analyzing' | 'running' | 'review' | 'done' | 'failed'
+type AgentState = 'idle' | 'working' | 'meeting' | 'waiting'
+
+type Task = {
   id: string
+  title: string
+  owner: AgentId
+  status: TaskStatus
+  needsAudit?: boolean
+}
+
+type AgentMeta = {
+  id: AgentId
   name: string
   role: string
   emoji: string
   color: string
   ring: string
-  state: 'idle' | 'working' | 'meeting' | 'waiting'
-  current: string
-  taskCount: number
 }
 
-const agents: Agent[] = [
-  { id: 'bonbujang', name: '본부장', role: 'CEO · 업무지휘', emoji: '👨‍💼', color: 'from-sky-400 to-bsj-primary', ring: 'ring-sky-300', state: 'meeting', current: '오늘 일정 분배', taskCount: 3 },
-  { id: 'gihoek', name: '기획팀장', role: 'CSO · 조사·설계', emoji: '🧑‍🎓', color: 'from-emerald-400 to-emerald-600', ring: 'ring-emerald-300', state: 'working', current: 'MICE 신규 공고 5건 조사', taskCount: 1 },
-  { id: 'saeop', name: '사업팀장', role: 'COO · 구축·실행', emoji: '👨‍💻', color: 'from-rose-400 to-rose-600', ring: 'ring-rose-300', state: 'working', current: '조아호텔 5월 IR 작성', taskCount: 2 },
-  { id: 'gamsa', name: '감사팀장', role: 'CIA · 팩트체크', emoji: '👩‍💼', color: 'from-purple-400 to-purple-600', ring: 'ring-purple-300', state: 'waiting', current: '검증 대기 (BSJ 결재)', taskCount: 1 },
-  { id: 'minwon', name: '민원팀장', role: 'CCO · 외부 연결', emoji: '👩‍💻', color: 'from-pink-400 to-pink-600', ring: 'ring-pink-300', state: 'idle', current: '대기 중', taskCount: 0 },
+const AGENTS: AgentMeta[] = [
+  { id: 'bonbujang', name: '본부장',   role: 'CEO · 업무지휘',  emoji: '👨‍💼', color: 'from-sky-400 to-bsj-primary',     ring: 'ring-sky-300' },
+  { id: 'gihoek',    name: '기획팀장', role: 'CSO · 조사·설계', emoji: '🧑‍🎓', color: 'from-emerald-400 to-emerald-600', ring: 'ring-emerald-300' },
+  { id: 'saeop',     name: '사업팀장', role: 'COO · 구축·실행', emoji: '👨‍💻', color: 'from-rose-400 to-rose-600',       ring: 'ring-rose-300' },
+  { id: 'gamsa',     name: '감사팀장', role: 'CIA · 팩트체크',  emoji: '👩‍💼', color: 'from-purple-400 to-purple-600',   ring: 'ring-purple-300' },
+  { id: 'minwon',    name: '민원팀장', role: 'CCO · 외부 연결', emoji: '👩‍💻', color: 'from-pink-400 to-pink-600',       ring: 'ring-pink-300' },
 ]
 
-const stateLabel: Record<Agent['state'], { label: string; dot: string }> = {
-  idle:    { label: '대기',     dot: 'bg-slate-300' },
-  working: { label: '작업 중',  dot: 'bg-emerald-500 animate-pulse' },
-  meeting: { label: '회의 중',  dot: 'bg-sky-500 animate-pulse' },
-  waiting: { label: '승인 대기', dot: 'bg-amber-400 animate-pulse' },
+const STATE_BADGE: Record<AgentState, { label: string; dot: string }> = {
+  idle:    { label: '대기',      dot: 'bg-slate-300' },
+  working: { label: '작업 중',   dot: 'bg-emerald-500 animate-pulse' },
+  meeting: { label: '지휘 중',   dot: 'bg-sky-500 animate-pulse' },
+  waiting: { label: '대기열',    dot: 'bg-amber-400 animate-pulse' },
+}
+
+function deriveAgentState(id: AgentId, tasks: Task[]): { state: AgentState; current: string; count: number } {
+  let mine: Task[]
+  if (id === 'bonbujang') {
+    mine = tasks.filter((t) => t.status !== 'done' && t.status !== 'failed')
+  } else if (id === 'gamsa') {
+    mine = tasks.filter(
+      (t) =>
+        t.status === 'review' ||
+        (t.needsAudit && t.status !== 'done' && t.status !== 'failed') ||
+        (t.owner === 'gamsa' && t.status !== 'done' && t.status !== 'failed'),
+    )
+  } else {
+    mine = tasks.filter((t) => t.owner === id && t.status !== 'done' && t.status !== 'failed')
+  }
+
+  const count = mine.length
+  if (count === 0) return { state: 'idle', current: '대기 중', count: 0 }
+
+  const latest = mine[0]
+
+  let state: AgentState = 'working'
+  if (id === 'bonbujang') {
+    state = latest.status === 'analyzing' ? 'meeting' : 'meeting'
+  } else if (id === 'gamsa') {
+    state = latest.status === 'review' ? 'working' : (latest.status === 'analyzing' ? 'waiting' : 'working')
+  } else {
+    if (latest.status === 'analyzing') state = 'waiting'
+    else if (latest.status === 'running') state = 'working'
+    else if (latest.status === 'review') state = 'waiting'
+  }
+
+  const current = id === 'bonbujang' && count > 1
+    ? `${count}건 지휘 중 · ${latest.title}`
+    : latest.title
+
+  return { state, current, count }
 }
 
 export function CharacterRow() {
+  const [tasks, setTasks] = useState<Task[]>([])
+
+  useEffect(() => {
+    let alive = true
+    async function fetchTasks() {
+      try {
+        const res = await fetch('/api/task', { cache: 'no-store' })
+        const data = await res.json()
+        if (alive) setTasks(data.tasks ?? [])
+      } catch {}
+    }
+    fetchTasks()
+    const id = setInterval(fetchTasks, 3000)
+    const onCreated = () => fetchTasks()
+    window.addEventListener('bsj:task-created', onCreated)
+    return () => {
+      alive = false
+      clearInterval(id)
+      window.removeEventListener('bsj:task-created', onCreated)
+    }
+  }, [])
+
   return (
     <div>
       <div className="mb-3 flex items-baseline justify-between">
         <h2 className="text-lg font-bold text-bsj-ink">직원 소개</h2>
-        <p className="text-xs text-slate-500">클릭하면 음성 채팅 시작</p>
+        <p className="text-xs text-slate-500">클릭하면 음성 채팅 시작 (Phase C)</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-        {agents.map((a, i) => {
-          const s = stateLabel[a.state]
+        {AGENTS.map((a, i) => {
+          const { state, current, count } = deriveAgentState(a.id, tasks)
+          const s = STATE_BADGE[state]
           return (
             <motion.button
               key={a.id}
@@ -64,10 +135,10 @@ export function CharacterRow() {
                 </div>
               </div>
               <div className="mt-3 rounded-xl bg-white/60 px-3 py-2 text-xs text-slate-700">
-                <p className="font-medium truncate">{a.current}</p>
+                <p className="font-medium truncate" title={current}>{current}</p>
                 <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
                   <span>{s.label}</span>
-                  <span>{a.taskCount}개 작업</span>
+                  <span>{count}건</span>
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-center gap-1 text-[11px] text-bsj-primary opacity-0 group-hover:opacity-100 transition-opacity">

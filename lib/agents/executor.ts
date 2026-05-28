@@ -1,7 +1,8 @@
 import { anthropic, AGENT_TO_MODEL, AGENT_LABEL, type AgentId } from '@/lib/anthropic'
 import { loadPrompt } from './prompts'
-import { update, type Task } from '@/lib/store/tasks'
+import { update, list, type Task } from '@/lib/store/tasks'
 import { verifyTask } from './verifier'
+import { publishTaskToLibrary } from '@/lib/store/library'
 
 const EXECUTION_SUFFIX = `
 ---
@@ -55,6 +56,18 @@ export async function executeTask(task: Task): Promise<void> {
         auditReport: audit.reportMarkdown,
         auditVerdict: audit.verdict,
       })
+    }
+
+    // 3단계: 자료실 게시 (도메인 폴더에 정적 마크다운 저장)
+    const finalAll = await list()
+    const final = finalAll.find((t) => t.id === task.id)
+    if (final && final.status === 'done') {
+      try {
+        const libraryPath = await publishTaskToLibrary(final)
+        if (libraryPath) await update(task.id, { libraryPath })
+      } catch (e: unknown) {
+        console.error(`[publish:${task.id}]`, e instanceof Error ? e.message : String(e))
+      }
     }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
