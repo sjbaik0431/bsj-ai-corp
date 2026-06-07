@@ -4,11 +4,15 @@ import { CharacterRow } from '@/components/character-row'
 import { TaskInput } from '@/components/task-input'
 import { LiveTasks } from '@/components/live-tasks'
 import { LibraryGrid } from '@/components/library-grid'
+import { DashboardPublishBar } from '@/components/dashboard-publish-bar'
 
 export default function HomePage() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-10">
       <Header />
+      <section className="mt-5">
+        <DashboardPublishBar />
+      </section>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <MorningRoutine />
       </div>

@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BSJ AI 주식회사 · 통합 터미널</title>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-card: #111111;
+  --bg-row: #161616;
+  --bg-row-alt: #1a1a1a;
+  --border: #262626;
+  --border-strong: #3f3f3f;
+  --text: #e5e7eb;
+  --text-dim: #94a3b8;
+  --text-faint: #525252;
+  --green: #86efac;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --cyan: #67e8f9;
+  --blue: #93c5fd;
+  --purple: #c4b5fd;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, Menlo, 'D2Coding', monospace; font-size: 13px; line-height: 1.5; }
+body { padding: 16px; min-height: 100vh; }
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 1px solid var(--border-strong); margin-bottom: 16px; }
+.brand { font-size: 16px; }
+.b-logo { background: var(--amber); color: #000; padding: 2px 6px; font-weight: 800; }
+.b-name { color: var(--text-dim); margin-left: 8px; }
+.meta { text-align: right; color: var(--text-faint); font-size: 11px; }
+.meta .m-row { display: block; }
+.hl { color: var(--green); }
+.hl-green { color: var(--green); }
+.hl-red { color: var(--red); }
+.hl-amber { color: var(--amber); }
+.hl-cyan { color: var(--cyan); }
+.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.span-full { grid-column: 1 / -1; }
+.card { background: var(--bg-card); border: 1px solid var(--border); padding: 12px 14px; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 10px; }
+.card-head h2 { font-size: 13px; font-weight: 700; color: var(--amber); letter-spacing: 0.02em; }
+.card-sub { color: var(--text-faint); font-size: 11px; }
+table.dense { width: 100%; border-collapse: collapse; }
+table.dense th, table.dense td { padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--border); }
+table.dense th { color: var(--text-faint); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+table.dense td { font-size: 12px; }
+table.dense tbody tr:hover { background: var(--bg-row-alt); }
+table.dense td.num, table.dense th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.dense td.title { color: var(--text); }
+table.dense td.empty { color: var(--text-faint); text-align: center; font-style: italic; padding: 12px; }
+table.dense .group-head td { color: var(--cyan); font-weight: 700; font-size: 11px; padding-top: 10px; border: none; background: transparent; }
+.glyph { font-size: 14px; vertical-align: middle; }
+.tag { display: inline-block; padding: 1px 5px; border-radius: 2px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; vertical-align: middle; margin-left: 4px; }
+.tag-audit { background: rgba(251, 191, 36, 0.15); color: var(--amber); border: 1px solid var(--amber); }
+.lib-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.lib-grid-vault { grid-template-columns: repeat(4, 1fr); }
+.lib-col { background: var(--bg-row); border: 1px solid var(--border); padding: 8px 10px; }
+.lib-col-head { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 6px; }
+.lib-tag { color: var(--amber); font-weight: 700; font-size: 11px; }
+.count { color: var(--text-faint); font-size: 11px; }
+.lib-col ul, .vt-list { list-style: none; }
+.lib-col li, .vt-list li { padding: 5px 0; border-bottom: 1px dotted var(--border); font-size: 11.5px; }
+.lib-col li:last-child, .vt-list li:last-child { border: none; }
+.lib-col li.empty, .vt-list li.empty { color: var(--text-faint); font-style: italic; padding: 10px 0; }
+.num.small { color: var(--text-faint); font-size: 10px; margin-right: 4px; }
+.meta-inline { display: block; color: var(--text-faint); font-size: 10px; margin-top: 2px; }
+.vt-title { color: var(--blue); font-weight: 500; }
+.vt-snippet { color: var(--text-dim); font-size: 10.5px; margin-top: 3px; padding-left: 4px; border-left: 2px solid var(--border-strong); }
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.kpi { background: var(--bg-row); border: 1px solid var(--border); padding: 10px; text-align: center; }
+.kpi-num { display: block; font-size: 22px; font-weight: 700; color: var(--cyan); font-variant-numeric: tabular-nums; }
+.kpi-label { display: block; color: var(--text-faint); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+.bf-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+.bf-main h2.bf-h2 { color: var(--amber); font-size: 14px; margin: 10px 0 6px; }
+.bf-main h3.bf-h3 { color: var(--cyan); font-size: 12px; margin: 8px 0 4px; }
+.bf-main p { font-size: 12px; margin: 4px 0; }
+.bf-main li { font-size: 12px; margin-left: 20px; }
+.bf-side { display: flex; flex-direction: column; gap: 8px; }
+.bf-pick { background: var(--bg-row); border: 1px solid var(--border); padding: 8px 10px; }
+.bf-pick-label { color: var(--text-faint); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.bf-pick-title { color: var(--green); margin-top: 4px; font-weight: 600; font-size: 12px; }
+.bf-pick-sub { color: var(--text-dim); font-size: 10px; margin-top: 2px; }
+.link-list { list-style: none; }
+.link-list li { padding: 4px 0; font-size: 11.5px; }
+footer { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border-strong); color: var(--text-faint); font-size: 10.5px; display: flex; justify-content: space-between; }
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+  .lib-grid { grid-template-columns: repeat(2, 1fr); }
+  .lib-grid-vault { grid-template-columns: repeat(2, 1fr); }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .grid { grid-template-columns: 1fr; }
+  .lib-grid, .lib-grid-vault, .kpi-grid { grid-template-columns: 1fr; }
+  .bf-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="b-logo">BSJ</span> <span class="b-name">AI 주식회사 · 통합 터미널</span></div>
+  <div class="meta">
+    <span class="m-row">GENERATED <span class="hl">2026년 6월 7일 오후 1:16 KST</span></span>
+    <span class="m-row">SOURCE <span class="hl">localhost:3000 · bsj-ai-corp</span></span>
+  </div>
+</header>
+<main class="grid">
+  <section class="card">
+  <div class="card-head"><h2>📊 KPI</h2></div>
+  <div class="kpi-grid">
+    <div class="kpi"><span class="kpi-num hl-green">1</span><span class="kpi-label">활성 작업</span></div>
+    <div class="kpi"><span class="kpi-num">10</span><span class="kpi-label">완료</span></div>
+    <div class="kpi"><span class="kpi-num hl-red">0</span><span class="kpi-label">실패</span></div>
+    <div class="kpi"><span class="kpi-num hl-amber">91%</span><span class="kpi-label">완료율</span></div>
+    <div class="kpi"><span class="kpi-num">8</span><span class="kpi-label">자료실 누적</span></div>
+    <div class="kpi"><span class="kpi-num">90%</span><span class="kpi-label">BSJ 잔여 지분</span></div>
+  </div>
+</section>
+  <section class="card span-full">
+  <div class="card-head"><h2>🌅 본부장 모닝 브리핑</h2><span class="card-sub">2026-06-07</span></div>
+  <div class="bf-grid">
+    <div class="bf-main"><h2 class="bf-h2">🌅 모닝 브리핑 — 2026-06-07 (일)</h2>
+
+<p>BSJ님, 초여름 일요일 아침입니다. 어제까지 보고서 라인업이 깔끔하게 정리됐으니, 오늘은 호흡을 고르며 한 주를 설계하기 좋은 날입니다.</p>
+
+<h3 class="bf-h3">오늘의 우선순위</h3>
+
+<p>**활성 작업**</p>
+<li>**#001 추천대가공제업 1년 미작성 사유서** (민원팀장 / 진행 10%)</li>
+<p>  - 진행률이 정체 상태입니다. 사유 논리 구성과 첨부 근거자료 수집이 병목으로 추정됩니다.</p>
+
+<p>**추천 액션**</p>
+<p>1. **민원팀장 호출 → #001 진행 점검** (10분)</p>
+<p>   - 막힌 지점이 &quot;사실관계 정리&quot;인지 &quot;법리 구성&quot;인지 1차 확인. 후자라면 감사팀장 협업 지시 권장.</p>
+<p>2. **다음 주 영업 파이프라인 1건 결정** (20분)</p>
+<p>   - 조아호텔 매출분석(#010)이 마무리됐으니, IR 후속(추가 자문/리테이너 전환) 또는 신규 MICE 1건 타진 중 하나 선택.</p>
+<p>3. **주간 플랜 30분 정리** (오전 중)</p>
+<p>   - #001 마감일 확정 + 6월 2주차 4팀장 KPI 1줄씩 셋팅.</p>
+
+<h3 class="bf-h3">최근 완료</h3>
+<li>**#010 조아호텔 5월 매출분석 보고서** — 사업팀장</li>
+<li>**#009 4팀장 현황 종합 보고** — 기획팀장</li>
+<li>**#008 조아호텔 5월 매출 IR 자료** — 사업팀장</li>
+
+<p>→ 조아호텔 트랙(#008→#010)이 한 사이클 완결됐고, 내부 정합성(#009)도 점검 완료. **외부 산출물 라인은 안정적**, 내부 미결(#001)이 유일한 리스크입니다.</p>
+
+<h3 class="bf-h3">본부장 한마디</h3>
+<p>한 건만 남았을 때가 가장 미루기 쉬운 타이밍입니다. **#001을 오늘 오전 중에 50%까지 끌어올리면** 내일부터 새 영업 트랙에 자유롭게 진입하실 수 있습니다. 일요일이지만 30분만 시동 걸어보시죠. 🚀</p>
+
+<p>---</p>
+<p>**다음 액션**: 민원팀장에게 #001 병목 진단 호출 → 오후까지 진행률 30% 목표.</p></div>
+    <aside class="bf-side">
+      <div class="bf-pick"><div class="bf-pick-label">오늘의 음악</div><div class="bf-pick-title">풍문으로 들었소</div><div class="bf-pick-sub">함중아와 양키스 · 한국 록</div></div>
+      <div class="bf-pick"><div class="bf-pick-label">오늘의 시</div><div class="bf-pick-title">레미 드 구르몽 「낙엽 (발췌)」</div></div>
+    </aside>
+  </div>
+</section>
+  <section class="card">
+  <div class="card-head"><h2>📎 기존 아카이브 (claude 레포)</h2><span class="card-sub">건드리지 않은 기존 자료</span></div>
+  <ul class="link-list">
+    <li><a href="../BSJ_AI_HUB_v3.html" target="_top">→ BSJ AI HUB v3 (74KB)</a></li>
+    <li><a href="../bsj_command_center_v3_fixed.html" target="_top">→ BSJ Command Center v3</a></li>
+    <li><a href="../briefing_20260606.html" target="_top">→ 최근 브리핑 2026-06-06</a></li>
+    <li><a href="../01_dapullim/" target="_top">→ 01 다풀림</a></li>
+    <li><a href="../02_joahotel/" target="_top">→ 02 조아호텔</a></li>
+    <li><a href="../03_jincheon/" target="_top">→ 03 진천</a></li>
+    <li><a href="../04_ezpmp_mice/" target="_top">→ 04 EZPMP MICE</a></li>
+  </ul>
+</section>
+  <section class="card span-full">
+  <div class="card-head"><h2>⚡ 작업 큐</h2><span class="card-sub">활성 1 · 최근 완료/실패 8</span></div>
+  <table class="dense">
+    <thead><tr><th>ID</th><th>상태</th><th>제목</th><th>담당</th><th class="num">진척</th><th class="num">갱신</th></tr></thead>
+    <tbody class="group-head"><tr><td colspan="6">▶ 활성</td></tr></tbody>
+    <tbody><tr>
+    <td class="num">#001</td>
+    <td><span class="glyph" style="color:#7dd3fc">◐</span> analyzing</td>
+    <td class="title">추천대가공제업 1년 미작성 사유서</td>
+    <td>민원팀장</td>
+    <td class="num">10%</td>
+    <td class="num">10일 전</td>
+  </tr></tbody>
+    <tbody class="group-head"><tr><td colspan="6">▶ 최근 완료/실패</td></tr></tbody>
+    <tbody><tr>
+    <td class="num">#011</td>
+    <td><span class="glyph" style="color:#94a3b8">●</span> done</td>
+    <td class="title">기존 대시보드·데이터 연동 가능성 조사</td>
+    <td>기획팀장</td>
+    <td class="num">100%</td>
+    <td class="num">35분 전</td>
+  </tr>
+<tr>
+    <td class="num">#010</td>
+    <td><span class="glyph" style="color:#94a3b8">●</span> done</td>
+    <td class="title">조아호텔 5월 매출분석 보고서 <span class="tag tag-audit">AUDIT</span></td>
+    <td>사업팀장</td>
+    <td class="num">100%</td>
+    <td class="num">39분 전</td>
+  </tr>
+<tr>
+    <td class="num">#009</td>
+    <td><span class="glyph" style="color:#94a3b8">●</span> done</td>
+    <td class="title">4팀장 현황 종합 보고</td>
+    <td>기획팀장</td>
+    <td class="num">100%</td>
+    <td class="num">42분 전</td>
+  </tr>
+<tr>
+    <td class="num">#008</td>
+    <td><span class="glyph" style="color:#94a3b8">●</span> done</td>
+    <td class="title">조아호텔 5월 매출 IR 자료 작성 <span class="tag tag-audit">AUDIT</span></td>
+    <td>사업팀장</td>
+    <td class="num">100%</td>
+    <td class="num">9일 전</td>
+  </tr>
+<tr>
+    <td class="num">#007</td>
+    <td><span class="glyph" style="color:#94a3b8">●</span> done</td>
+    <td class="title">호칭 규칙 변경 메모 정리</td>
+    <td>기획팀장</td>
+    <td class="num">100%</td>
+    <td class="num">10일 전</td>
+  </tr>
+<tr>
+    <td class="num">#006</td>
+    <td><span class="glyph" style="color:#94a3b8">●</span> done</td>
+    <td class="title">전사 스킬·대시보드 학습 프로젝트 <span class="tag tag-audit">AUDIT</span></td>
+    <td>기획팀장</td>
+    <td class="num">100%</td>
+    <td class="num">10일 전</td>
+  </tr>
+<tr>
+    <td class="num">#005</td>
+    <td><span class="glyph" style="color:#94a3b8">●</span> done</td>
+    <td class="title">오늘·내일 일정 종합보고서</td>
+    <td>사업팀장</td>
+    <td class="num">100%</td>
+    <td class="num">10일 전</td>
+  </tr>
+<tr>
+    <td class="num">#004</td>
+    <td><span class="glyph" style="color:#94a3b8">●</span> done</td>
+    <td class="title">조아호텔 6월 예약현황 및 단가조정 시뮬레이션 <span class="tag tag-audit">AUDIT</span></td>
+    <td>사업팀장</td>
+    <td class="num">100%</td>
+    <td class="num">10일 전</td>
+  </tr></tbody>
+  </table>
+</section>
+  <section class="card span-full">
+  <div class="card-head"><h2>📚 자료실 — 최근 산출물 (도메인별 top 5)</h2><span class="card-sub">총 8건</span></div>
+  <div class="lib-grid"><div class="lib-col">
+  <div class="lib-col-head"><span class="lib-tag">행정사</span> <span class="count">0</span></div>
+  <ul><li class="empty">— 비어있음 —</li></ul>
+</div>
+<div class="lib-col">
+  <div class="lib-col-head"><span class="lib-tag">호텔</span> <span class="count">3</span></div>
+  <ul><li>
+      <span class="num small">#010</span>
+      <a href="https://github.com/sjbaik0431/bsj-ai-corp/blob/main/public/library/hotel/010-%EC%A1%B0%EC%95%84%ED%98%B8%ED%85%94-5%EC%9B%94-%EB%A7%A4%EC%B6%9C%EB%B6%84%EC%84%9D-%EB%B3%B4%EA%B3%A0%EC%84%9C.md" target="_blank">조아호텔 5월 매출분석 보고서</a>
+      <span class="meta-inline">사업팀장 · 41분 전 · FLAG</span>
+    </li>
+<li>
+      <span class="num small">#008</span>
+      <a href="https://github.com/sjbaik0431/bsj-ai-corp/blob/main/public/library/hotel/008-%EC%A1%B0%EC%95%84%ED%98%B8%ED%85%94-5%EC%9B%94-%EB%A7%A4%EC%B6%9C-IR-%EC%9E%90%EB%A3%8C-%EC%9E%91%EC%84%B1.md" target="_blank">조아호텔 5월 매출 IR 자료 작성</a>
+      <span class="meta-inline">사업팀장 · 9일 전 · FLAG</span>
+    </li>
+<li>
+      <span class="num small">#004</span>
+      <a href="https://github.com/sjbaik0431/bsj-ai-corp/blob/main/public/library/hotel/004-%EC%A1%B0%EC%95%84%ED%98%B8%ED%85%94-6%EC%9B%94-%EC%98%88%EC%95%BD%ED%98%84%ED%99%A9-%EB%B0%8F-%EB%8B%A8%EA%B0%80%EC%A1%B0%EC%A0%95-%EC%8B%9C%EB%AE%AC%EB%A0%88%EC%9D%B4%EC%85%98.md" target="_blank">조아호텔 6월 예약현황 및 단가조정 시뮬레이션</a>
+      <span class="meta-inline">사업팀장 · 10일 전 · FLAG</span>
+    </li></ul>
+</div>
+<div class="lib-col">
+  <div class="lib-col-head"><span class="lib-tag">산단</span> <span class="count">0</span></div>
+  <ul><li class="empty">— 비어있음 —</li></ul>
+</div>
+<div class="lib-col">
+  <div class="lib-col-head"><span class="lib-tag">MICE</span> <span class="count">2</span></div>
+  <ul><li>
+      <span class="num small">#011</span>
+      <a href="https://github.com/sjbaik0431/bsj-ai-corp/blob/main/public/library/mice/011-%EA%B8%B0%EC%A1%B4-%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%C2%B7%EB%8D%B0%EC%9D%B4%ED%84%B0-%EC%97%B0%EB%8F%99-%EA%B0%80%EB%8A%A5%EC%84%B1-%EC%A1%B0%EC%82%AC.md" target="_blank">기존 대시보드·데이터 연동 가능성 조사</a>
+      <span class="meta-inline">기획팀장 · 36분 전</span>
+    </li>
+<li>
+      <span class="num small">#006</span>
+      <a href="https://github.com/sjbaik0431/bsj-ai-corp/blob/main/public/library/mice/006-%EC%A0%84%EC%82%AC-%EC%8A%A4%ED%82%AC%C2%B7%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C-%ED%95%99%EC%8A%B5-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8.md" target="_blank">전사 스킬·대시보드 학습 프로젝트</a>
+      <span class="meta-inline">기획팀장 · 10일 전 · FLAG</span>
+    </li></ul>
+</div>
+<div class="lib-col">
+  <div class="lib-col-head"><span class="lib-tag">라이프</span> <span class="count">3</span></div>
+  <ul><li>
+      <span class="num small">#009</span>
+      <a href="https://github.com/sjbaik0431/bsj-ai-corp/blob/main/public/library/life/009-4%ED%8C%80%EC%9E%A5-%ED%98%84%ED%99%A9-%EC%A2%85%ED%95%A9-%EB%B3%B4%EA%B3%A0.md" target="_blank">4팀장 현황 종합 보고</a>
+      <span class="meta-inline">기획팀장 · 43분 전</span>
+    </li>
+<li>
+      <span class="num small">#007</span>
+      <a href="https://github.com/sjbaik0431/bsj-ai-corp/blob/main/public/library/life/007-%ED%98%B8%EC%B9%AD-%EA%B7%9C%EC%B9%99-%EB%B3%80%EA%B2%BD-%EB%A9%94%EB%AA%A8-%EC%A0%95%EB%A6%AC.md" target="_blank">호칭 규칙 변경 메모 정리</a>
+      <span class="meta-inline">기획팀장 · 10일 전</span>
+    </li>
+<li>
+      <span class="num small">#005</span>
+      <a href="https://github.com/sjbaik0431/bsj-ai-corp/blob/main/public/library/life/005-%EC%98%A4%EB%8A%98%C2%B7%EB%82%B4%EC%9D%BC-%EC%9D%BC%EC%A0%95-%EC%A2%85%ED%95%A9%EB%B3%B4%EA%B3%A0%EC%84%9C.md" target="_blank">오늘·내일 일정 종합보고서</a>
+      <span class="meta-inline">사업팀장 · 10일 전</span>
+    </li></ul>
+</div></div>
+</section>
+  <section class="card span-full">
+  <div class="card-head"><h2>🗂 멀티볼트 — 최근 14일 변경된 노트</h2><span class="card-sub">총 30건 (vault×4)</span></div>
+  <div class="lib-grid lib-grid-vault"><div class="lib-col">
+  <div class="lib-col-head"><span class="lib-tag"><span class="hl-green">●</span> Ontology</span> <span class="count">8</span></div>
+  <ul class="vt-list"><li>
+      
+      <span class="vt-title">watcher-log</span>
+      <span class="meta-inline">_meta/watcher-log.md · 3일 전</span>
+      <div class="vt-snippet">- [2026-05-03 03:04:11] [INFO] injected synthetic queue: 2026-05-03T03-04-11-morning.json - [2026-05-03 03:04:11] [INFO] processin</div>
+    </li>
+<li>
+      
+      <span class="vt-title">2026-06-04_조아호텔매각</span>
+      <span class="meta-inline">대화록/2026-06-04_조아호텔매각.md · 3일 전</span>
+      <div class="vt-snippet">**날짜**: 2026년 6월 4일 **채널**: 텔레그램 (Hermes) **주제**: 조아호텔 매각 진행 상황 보고 및 기록 요청 --- - 소개 경로: 서울 광진구 신설동 부동산 (구 김홍길 사장 시절 인연) → 회장님께 직접 </div>
+    </li>
+<li>
+      
+      <span class="vt-title">조아호텔_매각추진현황</span>
+      <span class="meta-inline">조아호텔/조아호텔_매각추진현황.md · 3일 전</span>
+      <div class="vt-snippet">- **매물**: 조아호텔 - **매각 진행 시작**: 2026년 6월 (현재 진행 중) - **담당**: 백상진 행정사 --- - **소개 경로**: 서울 광진구 신설동 부동산 (구 김홍길 사장 시절 관계 맺은 곳) → 회장님께 직</div>
+    </li>
+<li>
+      
+      <span class="vt-title">20260601-041910-file-0</span>
+      <span class="meta-inline">_inbox/20260601-041910-file-0.md · 6일 전</span>
+      <div class="vt-snippet">- 캡처시각: 20260601-041910 - 출처: BSJ Command Center v3.0</div>
+    </li>
+<li>
+      
+      <span class="vt-title">20260601-041843-file-0</span>
+      <span class="meta-inline">_inbox/20260601-041843-file-0.md · 6일 전</span>
+      <div class="vt-snippet">- 캡처시각: 20260601-041843 - 출처: BSJ Command Center v3.0</div>
+    </li>
+<li>
+      
+      <span class="vt-title">20260601-041810-file-0</span>
+      <span class="meta-inline">_inbox/20260601-041810-file-0.md · 6일 전</span>
+      <div class="vt-snippet">- 캡처시각: 20260601-041810 - 출처: BSJ Command Center v3.0</div>
+    </li></ul>
+</div>
+<div class="lib-col">
+  <div class="lib-col-head"><span class="lib-tag"><span class="hl-green">●</span> Zettelkasten</span> <span class="count">0</span></div>
+  <ul class="vt-list"><li class="empty">— 최근 변경 없음 —</li></ul>
+</div>
+<div class="lib-col">
+  <div class="lib-col-head"><span class="lib-tag"><span class="hl-green">●</span> wiki</span> <span class="count">8</span></div>
+  <ul class="vt-list"><li>
+      
+      <span class="vt-title">log</span>
+      <span class="meta-inline">log.md · 11일 전</span>
+      <div class="vt-snippet">--- - **위키 최초 생성** - 도메인: 인물·네트워크 (People &amp; Network) - 스키마 파일 생성: `SCHEMA.md` - 인덱스 파일 생성: `index.md` - 로그 파일 생성: `log.md` - **ent</div>
+    </li>
+<li>
+      
+      <span class="vt-title">index</span>
+      <span class="meta-inline">index.md · 11일 전</span>
+      <div class="vt-snippet">&gt; 백상진(baek-sang-jin) 비즈니스 네트워크 전체 인물 목록입니다. &gt; 스키마 및 규칙: SCHEMA --- - baek-sang-jin — 백상진 (다풀림 행정사 사무소 대표, 조아호텔 운영사장, PULLIM Capita</div>
+    </li>
+<li>
+      
+      <span class="vt-title">최근규 세무사</span>
+      <span class="meta-inline">entities/choi-gk-tax.md · 11일 전</span>
+      <div class="vt-snippet">세무사 — 백상진 사업 자산 관련 세무 자문 담당. 미확인 baek-sang-jin 백상진의 세무 서비스 제공자. 2026-01-28 14:30 미팅. - 직함: 세무사 - 다풀림 사무소·조아호텔·부동산 자산 관련 세무 자문 추정 -</div>
+    </li>
+<li>
+      
+      <span class="vt-title">여동생</span>
+      <span class="meta-inline">entities/younger-sister.md · 11일 전</span>
+      <div class="vt-snippet">백상진의 여동생 — 2026-04-26 언급으로 존재 확인. 미확인 baek-sang-jin 백상진의 친여동생. 남편(매제)의 사촌형이 kwak-relative 곽상선 (음성군 도의원 출마). - 이전: 친동생 baek-sang-ta</div>
+    </li>
+<li>
+      
+      <span class="vt-title">양승보</span>
+      <span class="meta-inline">entities/yang-sb.md · 11일 전</span>
+      <div class="vt-snippet">DACO(주식회사 대륙) 기획팀 차장 — 일일 모닝브리핑 14페이지 PDF 작성 책임자. 미확인 baek-sang-jin 백상진이 자문하는 주식회사 대륙(kim-dk 김덕현 회장 소유) 기획팀 핵심 담당자. AI 자동화 후 작성자→검</div>
+    </li>
+<li>
+      
+      <span class="vt-title">원종문</span>
+      <span class="meta-inline">entities/won-jm.md · 11일 전</span>
+      <div class="vt-snippet">청주 디자인사무실 대표 — 백상진의 대학 운동권 동지. 미확인 baek-sang-jin 백상진의 대학 운동권 동지 (친한 친구). 청주 거점으로 청주 친구 네트워크 공유. - 소속: 청주 디자인사무실 대표 - 거점: 충북 청주 - 대</div>
+    </li></ul>
+</div>
+<div class="lib-col">
+  <div class="lib-col-head"><span class="lib-tag"><span class="hl-green">●</span> wiki-jincheon</span> <span class="count">14</span></div>
+  <ul class="vt-list"><li>
+      
+      <span class="vt-title">SK에코플랜트</span>
+      <span class="meta-inline">entities/sk-ecoplant.md · 11일 전</span>
+      <div class="vt-snippet">반도체 및 환경에너지 분야 SK그룹 계열사. 진천메가폴리스 착공 계획 확정 단계. - 업종: 반도체·환경플랜트 - 상태: 협의 진행중 (착공 계획 확정) - 우선순위: GOLD 등급 착공 계획이 확정된 단계로 반도체 분야 선도 입주 </div>
+    </li>
+<li>
+      
+      <span class="vt-title">변경 이력 (Change Log)</span>
+      <span class="meta-inline">log.md · 11일 전</span>
+      <div class="vt-snippet">--- - **작업자**: LLM Agent (Hermes) - **내용**: - 폴더 구조 생성 (entities, concepts, comparisons, queries, raw) - SCHEMA.md 생성 — IR 스코어링 규약</div>
+    </li>
+<li>
+      
+      <span class="vt-title">진천메가폴리스 기업유치 Wiki — 전체 현황 Index</span>
+      <span class="meta-inline">index.md · 11일 전</span>
+      <div class="vt-snippet">&gt; 스키마 및 태그 규약: SCHEMA &gt; IR 스코어링: concepts/ir-scoring-system &gt; 인센티브 제도: concepts/jincheon-incentives 총 **52개사** 등록 | 기준일: 2026-05-2</div>
+    </li>
+<li>
+      
+      <span class="vt-title">화진</span>
+      <span class="meta-inline">entities/hwajin.md · 11일 전</span>
+      <div class="vt-snippet">화진은 화공약품 용기(드럼·탱크 등)를 제조하는 업체로 2026년 4월 진천메가폴리스 분양 상담을 진행하였으며, 착공 예정이 수차례 연기되어 현재 2029년으로 계획되어 있다. - 업종: 화공약품 용기 제조 - 주요 제품: 화학물질 </div>
+    </li>
+<li>
+      
+      <span class="vt-title">삼양</span>
+      <span class="meta-inline">entities/samyang.md · 11일 전</span>
+      <div class="vt-snippet">삼양은 업종 및 필요면적이 아직 미정인 상태로 2026년 4월 진천메가폴리스 분양 상담을 진행하였다. - 업종: 미정 - 필요면적: 미정 - 최초 상담: 2026-04-08 - 진행 상황: 기록 없음 — 업종·면적 등 상세 정보 파악</div>
+    </li>
+<li>
+      
+      <span class="vt-title">제이컴</span>
+      <span class="meta-inline">entities/j-com.md · 11일 전</span>
+      <div class="vt-snippet">제이컴은 재활용(38 코드) 관련 업체로 2026년 3월 진천메가폴리스 분양 상담을 진행하였다. - 업종: 재활용 (38코드 — 폐기물 처리·재생) - 필요면적: 5,000~8,000㎡ - 최초 상담: 2026-03-31 - 진행 상</div>
+    </li></ul>
+</div></div>
+</section>
+</main>
+<footer>
+  <span>BSJ AI 주식회사 · 통합 터미널 · v1.0</span>
+  <span>tasks=11 · lib=8 · vaults=4/4 · notes=30</span>
+</footer>
+</body>
+</html>
